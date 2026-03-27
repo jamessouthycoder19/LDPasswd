@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <ldpasswd/ldpasswd.h>
+
 int tokenize(const char *input) {
     // First get the length of the password
     int length = strlen(input);
@@ -63,7 +65,6 @@ int tokenize(const char *input) {
     return 0;
 }
 
-int main() {
+void hello(void) {
     printf("Hello, World!\n");
-    return 0;
 }
