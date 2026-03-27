@@ -23,10 +23,11 @@ cmake --build build-windows
 4. Retrieve compiled header and move it to the correct location
 ```bash
 # Look inside build/ and build-windows/ for the .a file and .lib file respectively
+# On Linux, move the file to a global library directory if not there already
 mv ldpasswd.a /usr/local/lib/
 ```
 ```powershell
-# Move .lib to project root for compilatoin
+# On Windows, move .lib file to project root for static compilation
 ```
 
 ## For developers
