@@ -110,7 +110,7 @@ int find_word(const char *pw) {
     // These variables define the current search state in the trie
     // root_idx and root_cnt are the starting point for the search (the top-level nodes)
     int root_idx = 0;
-    int root_cnt = 695;
+    int root_cnt = 678;
 
     // The data_bin array is a flat representation of the trie nodes. We cast it to our Node struct for easier access.
     Node *table = (Node *)data_bin;
@@ -236,6 +236,19 @@ int tokenize_password(const char *pw, int *start_of_token_indicies, char *token_
                 max_word_len = word_len;
             }
 
+        }
+        // If we have a word 1 or 2 characters in length
+        // And one of them is not a-zA-z, then its safe to assume that it's not actually
+        // leetspeak, and a false positive, so set max_word_len to 0 to ignore it as word.
+        if (max_word_len == 1) {
+            if (!((pw[i] >= 'a' && pw[i] <= 'z') || (pw[i] >= 'A' && pw[i] <= 'Z'))) {
+                max_word_len = 0;
+            }
+        } 
+        if (max_word_len == 2) {
+            if (!((pw[i + 1] >= 'a' && pw[i + 1] <= 'z') || (pw[i + 1] >= 'A' && pw[i + 1] <= 'Z'))) {
+                max_word_len = 0;
+            }
         }
         // This means we found a word
         // The check is > 1, because if we think we found a single character word

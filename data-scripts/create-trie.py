@@ -57,7 +57,7 @@ def generate_binary_table(wordlist_paths):
 
 def main():
     wordlist_paths = [
-        "../data/original-wordlists/passwords.txt",
+        # "../data/original-wordlists/passwords.txt",
         "../data/original-wordlists/english_wikipedia.txt",
         "../data/original-wordlists/us_tv_and_film.txt",
         "../data/original-wordlists/surnames.txt",
