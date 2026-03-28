@@ -68,9 +68,6 @@ int tokenize(const char *input) {
 }
 
 void hello(void) {
-    printf("Hello, World!\n");
-    
-
     FILE *file = fopen("/home/james/LDPasswd/data/data.txt", "r");
     if (file == NULL) {
         perror("Unable to open file");
@@ -98,7 +95,6 @@ void hello(void) {
 
     struct json_tokener *tok = json_tokener_new();
     const struct json_object *json_dict;
-    // const char *json_str = "{\"name\": \"Alice\", \"age\": 30, \"is_student\": false}";
     json_dict = json_tokener_parse_ex(tok, raw_lines, strlen(raw_lines));
 
     json_tokener_free(tok);
@@ -108,19 +104,59 @@ void hello(void) {
     // This wil obviously get organized better into functions and what not
     // but after this is how we would tokenize a password and what not
 
-    const char *example_password = "JamesPassword123!";
+    const char *example_password = "assword123!";
+    struct json_object *current_level = (struct json_object *)json_dict;
+    int p_idx = 0; // Current position in the password string
+    int depth = 0;
+    int pass_len = strlen(example_password);
 
-    // Split up into tokens of length 2
-    char tokens[100][3]; // Assuming max 100 tokens of length 2
-    int token_count = 0;
-    for (int i = 0; i < strlen(example_password); i += 2) {
-        snprintf(tokens[token_count], sizeof(tokens[token_count]), "%c%c", example_password[i], example_password[i + 1]);
-        token_count++;
+    printf("Walking the JSON tree for password: %s\n", example_password);
+
+    while (p_idx < pass_len) {
+        struct json_object *next_level = NULL;
+        char token2[3] = {0};
+        char token1[2] = {0};
+
+        // 1. Try a 2-character match if enough characters remain
+        int found_match = 0;
+        if (p_idx + 1 < pass_len) {
+            token2[0] = example_password[p_idx];
+            token2[1] = example_password[p_idx + 1];
+            
+            if (json_object_object_get_ex(current_level, token2, &next_level)) {
+                printf("Match found! 2-char token '%s' at depth %d.\n", token2, depth + 1);
+                current_level = next_level;
+                p_idx += 2; // Consume 2 chars
+                found_match = 1;
+            }
+        }
+
+        // 2. Fallback to 1-character match if 2-char failed
+        if (!found_match) {
+            token1[0] = example_password[p_idx];
+            if (json_object_object_get_ex(current_level, token1, &next_level)) {
+                printf("Match found! 1-char token '%s' at depth %d.\n", token1, depth + 1);
+                current_level = next_level;
+                p_idx += 1; // Consume 1 char
+                found_match = 1;
+            }
+        }
+
+        if (found_match) {
+            depth++;
+            // If the new level isn't an object, we've hit a leaf node (end of a word)
+            if (!json_object_is_type(current_level, json_type_object)) {
+                printf("Reached a leaf node. Search complete.\n");
+                break;
+            }
+        } else {
+            printf("No match found for remaining string starting at '%c'.\n", example_password[p_idx]);
+            break;
+        }
     }
 
-    for (int i = 0; i < token_count; i++) {
-        printf("Token %d: %s\n", i + 1, tokens[i]);
-    }
+    printf("Deepest successful match reached: %d tokens.\n", depth);
+
 
     // Below this is cleanup code to free the memory allocated for the lines and the json objects.
     json_object_put((struct json_object *)json_dict);
