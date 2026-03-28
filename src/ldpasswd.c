@@ -70,21 +70,48 @@ int tokenize(const char *input) {
 void hello(void) {
     printf("Hello, World!\n");
     
-    /* 1. Create a root JSON object: { } */
-    struct json_object *root = json_object_new_object();
 
-    /* 2. Add a string field: { "message": "Hello, Static JSON-C!" } */
-    json_object_object_add(root, "message", json_object_new_string("Hello, Static JSON-C!"));
+    FILE *file = fopen("/home/james/LDPasswd/data/data.txt", "r");
+    if (file == NULL) {
+        perror("Unable to open file");
+        return 1;
+    }
 
-    /* 3. Add a number: { ..., "version": 1 } */
-    json_object_object_add(root, "version", json_object_new_int(1));
+    // Array to hold 6 string pointers
+    const char *lines[6];
+    char *temp_line = NULL;
+    size_t len = 0;
+    int count = 0;
 
-    /* 4. Serialize the object to a string and print it */
-    const char *json_string = json_object_to_json_string(root);
-    printf("Generated JSON: %s\n", json_string);
+    // getline handles the memory allocation for the temporary read
+    while (count < 6 && getline(&temp_line, &len, file) != -1) {
+        
+        // Remove trailing newline if present
+        temp_line[strcspn(temp_line, "\r\n")] = '\0';
 
-    /* 5. Clean up memory (Important in C!) */
-    json_object_put(root);
+        // Use strdup to create a permanent copy for our array
+        lines[count] = strdup(temp_line);
+        count++;
+    }
+
+    // Free the temporary buffer used by getline
+    free(temp_line);
+    fclose(file);
+
+    struct json_tokener *tok = json_tokener_new();
+    const struct json_object *json_dicts[6];
+    // const char *json_str = "{\"name\": \"Alice\", \"age\": 30, \"is_student\": false}";
+    for (int i = 0; i < count; i++) {
+        json_dicts[i] = json_tokener_parse_ex(tok, lines[i], strlen(lines[i]));
+    }
+
+    json_tokener_free(tok);
+
+    for (int i = 0; i < count; i++) {
+        printf("Parsed JSON Object %d: %s\n", i + 1, json_object_to_json_string(json_dicts[i]));
+        free((void *)lines[i]);
+        json_object_put((struct json_object *)json_dicts[i]);
+    }
 
     return 0;
 }

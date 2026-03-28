@@ -1,3 +1,5 @@
+import json
+
 files = [
     "passwords.txt",
     "english_wikipedia.txt",
@@ -57,4 +59,4 @@ for file in files:
                 raise e
             
         with open("../data/" + json_file, "a") as f:
-            f.write(file.split(".txt")[0] + ": " + str(json_data) + "\n")
+            f.write(json.dumps(json_data) + "\n")
