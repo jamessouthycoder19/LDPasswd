@@ -1,3 +1,4 @@
+import os
 import json
 
 files = [
@@ -10,6 +11,7 @@ files = [
     ]
 
 json_file = "data.txt"
+header_file = "data.h"
 
 # Clear the json file before writing to it
 with open ("../data/" + json_file, "w") as f:
@@ -57,5 +59,10 @@ for file in files:
                 print(f"Current dict: {current_dict}")
                 raise e
             
-with open("../data/" + json_file, "a") as f:
+with open("../data/" + json_file, "w") as f:
     f.write(json.dumps(json_data) + "\n")
+
+with open("data", "w") as f:
+    f.write(json.dumps(json_data) + "\n")
+
+os.system(f"xxd -i data > ../include/ldpasswd/{header_file}")
