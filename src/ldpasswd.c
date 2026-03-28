@@ -28,6 +28,80 @@ int compare_nodes(const void *a, const void *b) {
     return strncmp(nodeA->token, nodeB->token, 2);
 }
 
+// Structure to hold the results of un-leeting a password
+typedef struct {
+    char **strings;
+    int count;
+    int capacity;
+} ResultList;
+
+// Simple structure to map leet chars back to letters
+typedef struct {
+    char leet;
+    char original;
+} Map;
+
+// Map for Leetspeak substitutions.
+Map LEET_MAP[] = {
+    {'4', 'a'}, {'@', 'a'}, {'8', 'b'}, {'(', 'c'}, {'{', 'c'}, 
+    {'[', 'c'}, {'<', 'c'}, {'3', 'e'}, {'6', 'g'}, {'9', 'g'}, 
+    {'1', 'i'}, {'!', 'i'}, {'|', 'i'}, {'1', 'l'}, {'|', 'l'}, 
+    {'7', 'l'}, {'0', 'o'}, {'$', 's'}, {'5', 's'}, {'+', 't'}, 
+    {'7', 't'}, {'%', 'x'}, {'2', 'z'}
+};
+
+void add_result(ResultList *res, const char *str) {
+    if (res->count == res->capacity) {
+        res->capacity *= 2;
+        res->strings = realloc(res->strings, sizeof(char*) * res->capacity);
+    }
+    res->strings[res->count++] = strdup(str);
+}
+
+
+/**
+ * The following two functions (backtrack and generate_unleet) are utilized to generate all possible "un-leeted" versions of a given password.
+ * Example: "p@ssw0rd" would generate "password", "p@ssword", "passw0rd", etc.
+ * 
+ * There are 2 functions because recursion is used
+ */
+void backtrack(const char *input, char *current, int index, ResultList *res) {
+    if (input[index] == '\0') {
+        current[index] = '\0';
+        add_result(res, current);
+        return;
+    }
+
+    char c = input[index];
+    int found = 0;
+
+    // Check the map for all possible translations
+    for (int i = 0; i < sizeof(LEET_MAP) / sizeof(Map); i++) {
+        if (LEET_MAP[i].leet == c) {
+            found = 1;
+            current[index] = LEET_MAP[i].original;
+            backtrack(input, current, index + 1, res);
+        }
+    }
+
+    // Also consider the character as itself (e.g., '0' stays '0')
+    current[index] = c;
+    backtrack(input, current, index + 1, res);
+}
+
+ResultList generate_unleet(const char *input) {
+    ResultList res;
+    res.count = 0;
+    res.capacity = 10;
+    res.strings = malloc(sizeof(char*) * res.capacity);
+    
+    char *buffer = malloc(strlen(input) + 1);
+    backtrack(input, buffer, 0, &res);
+    free(buffer);
+    
+    return res;
+}
+
 /**
  * Returns the deepest index where a valid word was found, or 0 if no word was found at all.
  */
@@ -116,26 +190,106 @@ int find_word(const char *pw) {
     }
 }
 
-void hello() {
-    int root_start = 0;
-    int root_count = 500;
+int* tokenize_password(const char *pw) {
+    // First get the length of the password
+    int pw_length = strlen(pw);
 
+    // Array to hold starting indices of each token
+    int start_of_token_indicies[] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+    int token_count = 0;
+
+    // Create an array with all leatspeakable versions of the word
+    char* lower_password;
+    lower_password = malloc(pw_length + 1);
+    strncpy(lower_password, pw, pw_length + 1); 
+    for (int j = 0; lower_password[j]; j++) {
+        lower_password[j] = tolower(lower_password[j]);
+    }
+
+    ResultList results = generate_unleet(lower_password);
+    free(lower_password);
+
+    printf("Results for %s:\n", pw);
+    for (int i = 0; i < results.count; i++) {
+        printf("- %s\n", results.strings[i]);
+    }
+
+    // for (int i = 0; i < pw_length; i++) {
+    //     // Only storing 20 tokens
+    //     if (token_count >= 20) {
+    //         break;
+    //     } else {
+    //         start_of_token_indicies[token_count] = i;
+    //         token_count++;
+    //     }
+
+    //     // Start by tring to find a word
+
+
+
+    //     // First check if we have a number
+    //     if (pw[i] >= '0' && pw[i] <= '9') {
+    //         for (int j = i + 1; j < pw_length; j++) {
+    //             // figure out if we have a number after
+    //             // If not, break out of the 'j' loop.
+    //             if (pw[j] < '0' || pw[j] > '9') {
+    //                 break;
+    //             } else {
+    //                 // If we do, increment i again to skip over the number
+    //                 // because that gets counted with the previous token.
+    //                 i = j;
+    //             }
+    //         }
+    //     }
+    //     // Next check if we have a special character.
+    //     // No need to check for any other special characters after,
+    //     // they should each be treated as their own token
+    //     else if ((pw[i] >= '!' && pw[i] <= '/') || (pw[i] >= ':' && pw[i] <= '@') || (pw[i] >= '[' && pw[i] <= '`') || (pw[i] >= '{' && pw[i] <= '~')) {
+    //         start_of_token_indicies[token_count] = i;
+    //         token_count++;
+    //     }
+    //     // Next letters.
+    //     // If we have a capital.
+    //     //            Then if there is a lowercase letter after, keep going until capital or non letter is found, thats the end of token. There should be at least 2 lowercase
+    //     //                                                   
+    //     // If 
+    //     else if (pw[i] >= 'A' && pw[i] <= 'Z') {
+    //         // start_of_token_indicies[token_count] = i;
+    //         // token_count++;
+    //         // for (int j = i + 1; j < length; j++) {
+    //         //     // figure out if we have a lowercase letter after
+    //         //     // If not, break out of the 'j' loop.
+    //         //     if (input[j] < 'a' || input[j] > 'z') {
+    //         //         break;
+    //         //     } else {
+    //         //         // If we do, increment i again to skip over the lowercase letter
+    //         //         // because that gets counted with the previous token.
+    //         //         i = j;
+    //         //     }
+    //         // }
+    //     }
+    // }
+    for (int i = 0; i < results.count; i++) {
+        free(results.strings[i]);
+    }
+    free(results.strings);
+
+    return 0;  
+}
+
+void hello() {
     const char *test_pws[] = {
-        "password",
+        "Password",
         "pass",
-        "password123",
-        "unknownword",
+        "PassWord123",
+        "Unknownword",
         "james",
-        "jamesblahblahblah"
+        "jamesblahblahblah",
+        "P@sSw0Rd"
     };
 
-    for (int i = 0; i < 5; i++) {
-        int depth = find_word(test_pws[i]);
-        if (depth > 0) {
-            printf("Found match for '%s' (Ends at token depth %d)\n", test_pws[i], depth);
-        } else {
-            printf("No match found for '%s'\n", test_pws[i]);
-        }
+    for (int i = 0; i < 7; i++) {
+        tokenize_password(test_pws[i]);
     }
 
     return 0;
