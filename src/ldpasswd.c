@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <json-c/json.h>
+
 #include <ldpasswd/ldpasswd.h>
 
 int tokenize(const char *input) {
@@ -67,4 +69,22 @@ int tokenize(const char *input) {
 
 void hello(void) {
     printf("Hello, World!\n");
+    
+    /* 1. Create a root JSON object: { } */
+    struct json_object *root = json_object_new_object();
+
+    /* 2. Add a string field: { "message": "Hello, Static JSON-C!" } */
+    json_object_object_add(root, "message", json_object_new_string("Hello, Static JSON-C!"));
+
+    /* 3. Add a number: { ..., "version": 1 } */
+    json_object_object_add(root, "version", json_object_new_int(1));
+
+    /* 4. Serialize the object to a string and print it */
+    const char *json_string = json_object_to_json_string(root);
+    printf("Generated JSON: %s\n", json_string);
+
+    /* 5. Clean up memory (Important in C!) */
+    json_object_put(root);
+
+    return 0;
 }

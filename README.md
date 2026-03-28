@@ -5,18 +5,27 @@ LDPasswd is a C library providing functions to achieve ϵ-LDP protection when co
 ## On Linux
 1. Install prerequisites
 ```bash
-sudo apt install mingw-w64 cmake build-essentials
+sudo apt install mingw-w64 cmake
+git clone https://github.com/Microsoft/vcpkg.git
+./vcpkg/bootstrap-vcpkg.sh
+export VCPKG_ROOT=$(pwd)/vcpkg
 ```
 
 2. Compiling library for Linux
 ```bash
-cmake -B build
+cmake -B build -S . \
+  -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
 cmake --build build
 ```
 
 3. Compiling library for Windows
 ```bash
-cmake -B build-windows -DCMAKE_TOOLCHAIN_FILE=toolchains/mingw-w64-x86_64.cmake
+cmake -B build-windows -S . \
+  -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+  -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE="$PWD/toolchains/mingw-w64-x86_64.cmake" \
+  -DVCPKG_TARGET_TRIPLET=x64-mingw-static
+  -DCMAKE_SHELL=/bin/sh
+
 cmake --build build-windows
 ```
 
@@ -29,10 +38,17 @@ sudo cmake --install build
 sudo cmake --install build-windows
 ```
 
+5. Build the testing binary
+```bash
+# Linux
+cmake --build build --target testldp
+```
+
 5. Clean up environment
 ```bash
 rm -rf build/
 rm -rf build-windows/
+rm -rf vcpkg_installed/
 ```
 
 ## For developers
