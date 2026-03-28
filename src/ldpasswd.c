@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #include "ldpasswd/ldpasswd.h"
 #include "ldpasswd/data.h"
@@ -190,13 +191,15 @@ int find_word(const char *pw) {
     }
 }
 
-int* tokenize_password(const char *pw) {
+
+/**
+ * Tokenizes the password into an array of tokens, where each token is either a word, a number, or a special character.
+ * The start indices of each token in the original password are stored in the start_of_token_indicies array, 
+ * and the type of each token is stored in the token_types array (word, number, special, or other).
+ */
+int tokenize_password(const char *pw, int *start_of_token_indicies, char *token_types) {
     // First get the length of the password
     int pw_length = strlen(pw);
-
-    // Array to hold starting indices of each token
-    int start_of_token_indicies[] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
-    int token_count = 0;
 
     // Create an array with all leatspeakable versions of the word
     char* lower_password;
@@ -209,72 +212,77 @@ int* tokenize_password(const char *pw) {
     ResultList results = generate_unleet(lower_password);
     free(lower_password);
 
-    printf("Results for %s:\n", pw);
-    for (int i = 0; i < results.count; i++) {
-        printf("- %s\n", results.strings[i]);
+    int token_count = 0;
+
+    // Now iterate through the password and find all tokens
+
+    for (int i = 0; i < pw_length; i++) {
+        // Only storing 20 tokens
+        if (token_count >= 20) {
+            break;
+        } else {
+            start_of_token_indicies[token_count] = i;
+            token_count++;
+        }
+
+        // Start by trying to find a word
+        // We'll check for a word starting at i in each of the 
+        // un-leeted versions of the password, and take the longest match
+        int max_word_len = 0;
+        int word_len = 0;
+        for (int j = 0; j < results.count; j++) {
+            word_len = find_word(results.strings[j] + i);
+            if (word_len > max_word_len) {
+                max_word_len = word_len;
+            }
+
+        }
+        // This means we found a word
+        // The check is > 1, because if we think we found a single character word
+        // (ex. A, I, S, etc.) we want to ignore that because it for now, because the leet
+        // speak check mightve accidently caught that. For axample, it could be 45, and we would
+        // rather tokenize the whole number togheter, instead of just the letter. If all of our checks
+        // fail, then we just tokenize a single character, so it really doesn't make a difference
+        // by the end of the process, but this way we will catch number combinations.
+        if (max_word_len > 0) {
+            token_types[token_count - 1] = 'w'; // 'w' for word
+        }
+        if (max_word_len > 1) {
+            i += max_word_len - 1; // -1 because the loop will increment i again
+        }
+
+        // Next check if we have a number
+        else if (pw[i] >= '0' && pw[i] <= '9') {
+            token_types[token_count - 1] = 'n'; // 'n' for number
+            for (int j = i + 1; j < pw_length; j++) {
+                // figure out if we have a number after
+                // If not, break out of the 'j' loop.
+                if (pw[j] < '0' || pw[j] > '9') {
+                    break;
+                } else {
+                    // If we do, increment i again to skip over the number
+                    // because that gets counted with the previous token.
+                    i = j;
+                }
+            }
+        }
+        // Next check if we have a special character.
+        // No need to check for any other special characters after,
+        // they should each be treated as their own token
+        else if ((pw[i] >= '!' && pw[i] <= '/') || (pw[i] >= ':' && pw[i] <= '@') || (pw[i] >= '[' && pw[i] <= '`') || (pw[i] >= '{' && pw[i] <= '~')) {
+            token_types[token_count - 1] = 's'; // 's' for special character
+        } else {
+            token_types[token_count - 1] = 'o'; // 'o' for other
+        }
     }
 
-    // for (int i = 0; i < pw_length; i++) {
-    //     // Only storing 20 tokens
-    //     if (token_count >= 20) {
-    //         break;
-    //     } else {
-    //         start_of_token_indicies[token_count] = i;
-    //         token_count++;
-    //     }
-
-    //     // Start by tring to find a word
-
-
-
-    //     // First check if we have a number
-    //     if (pw[i] >= '0' && pw[i] <= '9') {
-    //         for (int j = i + 1; j < pw_length; j++) {
-    //             // figure out if we have a number after
-    //             // If not, break out of the 'j' loop.
-    //             if (pw[j] < '0' || pw[j] > '9') {
-    //                 break;
-    //             } else {
-    //                 // If we do, increment i again to skip over the number
-    //                 // because that gets counted with the previous token.
-    //                 i = j;
-    //             }
-    //         }
-    //     }
-    //     // Next check if we have a special character.
-    //     // No need to check for any other special characters after,
-    //     // they should each be treated as their own token
-    //     else if ((pw[i] >= '!' && pw[i] <= '/') || (pw[i] >= ':' && pw[i] <= '@') || (pw[i] >= '[' && pw[i] <= '`') || (pw[i] >= '{' && pw[i] <= '~')) {
-    //         start_of_token_indicies[token_count] = i;
-    //         token_count++;
-    //     }
-    //     // Next letters.
-    //     // If we have a capital.
-    //     //            Then if there is a lowercase letter after, keep going until capital or non letter is found, thats the end of token. There should be at least 2 lowercase
-    //     //                                                   
-    //     // If 
-    //     else if (pw[i] >= 'A' && pw[i] <= 'Z') {
-    //         // start_of_token_indicies[token_count] = i;
-    //         // token_count++;
-    //         // for (int j = i + 1; j < length; j++) {
-    //         //     // figure out if we have a lowercase letter after
-    //         //     // If not, break out of the 'j' loop.
-    //         //     if (input[j] < 'a' || input[j] > 'z') {
-    //         //         break;
-    //         //     } else {
-    //         //         // If we do, increment i again to skip over the lowercase letter
-    //         //         // because that gets counted with the previous token.
-    //         //         i = j;
-    //         //     }
-    //         // }
-    //     }
-    // }
+    // Cleanup
     for (int i = 0; i < results.count; i++) {
         free(results.strings[i]);
     }
     free(results.strings);
 
-    return 0;  
+    return 1;
 }
 
 void hello() {
@@ -285,12 +293,49 @@ void hello() {
         "Unknownword",
         "james",
         "jamesblahblahblah",
-        "P@sSw0Rd"
+        "P@sSw0Rd",
+        "Password7JamesTh1ngFather",
+        "passw0rdRed14&TeamSucks",
+        "123PassWord123",
+        "1Unknown(((wordBlah",
+        "jameswaoifjwa",
+        "12!Blah!21",
+        "P@sSw0RdJ4mes"
     };
 
-    for (int i = 0; i < 7; i++) {
-        tokenize_password(test_pws[i]);
-    }
+    for (int i = 0; i < 14; i++) {
+        // Array to hold starting indices of each token
+        int *start_of_token_indicies = malloc(20 * sizeof(int));
+        for (int i = 0; i < 20; i++) {
+            start_of_token_indicies[i] = -1;
+        }
+        int token_count = 0;
 
-    return 0;
+        // Array to hold type of each token (word, number, special, or other)
+        char *token_types = malloc(20 * sizeof(char));
+        for (int i = 0; i < 20; i++) {
+            token_types[i] = '\0';
+        }
+
+
+        printf("Tokenizing: %s\n", test_pws[i]);
+        int tokens = tokenize_password(test_pws[i], start_of_token_indicies, token_types);
+        for (int j = 0; j < 20; j++) {
+            if (start_of_token_indicies[j] != -1) {
+                int next_token_start = (j < 19) ? start_of_token_indicies[j + 1] : strlen(test_pws[i]);
+                if (token_types[j] == 'w') {
+                    printf("Word");
+                } else if (token_types[j] == 'n') {
+                    printf("Number");
+                } else if (token_types[j] == 's') {
+                    printf("Special");
+                } else {
+                    printf("Other");
+                }
+                printf(":%.*s\n", next_token_start - start_of_token_indicies[j], test_pws[i] + start_of_token_indicies[j]);
+                // printf("%d:%c  ", start_of_token_indicies[j], token_types[j]);
+            }
+        }
+        printf("\n");
+    }
 }
