@@ -71,3 +71,6 @@ CMakeUserPresets.json
 # Project Specific Files/Directories
 build/
 build-windows/
+
+.pyc
+__pycache__
