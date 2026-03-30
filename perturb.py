@@ -1,5 +1,6 @@
 # perturb.py
 import math
+import string
 import random
 import itertools
 
@@ -79,7 +80,18 @@ def perturb_number(number: str, eps: float) -> str:
     return selection
 
 def perturb_special(special: str, eps: float) -> str:
-    return special
+    special_chars = [x for x in string.punctuation]
+    ret = ""
+    for char in special:
+        if char not in special_chars:
+            special_chars.append(char)
+
+        utility_space = [-1 * abs(ord(char) - ord(x)) for x in special_chars]
+
+        selection = exponential_mech(special_chars, utility_space, eps)
+        ret += selection
+
+    return ret
 
 def perturb(password: str, eps: float = 1.0) -> str:
     tokens, token_types = tokenize(password)
