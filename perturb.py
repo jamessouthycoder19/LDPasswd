@@ -485,7 +485,7 @@ def perturb(password: str, eps: float = 1.0) -> str:
     return ''.join(tokens)
 
 def main():
-    eps_vals = [0.01, 0.1, 0.25, 0.5, 1.0, 2.0, 5.0, 12.0, 20.0, 50.0, 100.0, 250.0, 1000.0, 5000.0]
+    eps_vals = [0.01, 0.1, 0.25, 0.5, 1.0, 2.0, 5.0, 12.0, 20.0, 50.0, 100.0, 250.0, 1000.0, 5000.0, 10000.0, 25000.0, 50000.0, 100000.0]
     passwords = [
         "Apple432Bottom#",
         "Password123!",
@@ -514,14 +514,22 @@ def main():
         "ThankYouWhiteTeam"
     ]
     
-    perturbed = {}
+    # perturbed = {}
     for eps in eps_vals:
-        perturbed_passwords = []
-        for password in irsec_passwords:
-            perturbed_passwords.append((password, perturb(password, eps)))
-        perturbed[eps] = perturbed_passwords
+        num_different = 0
+        # perturbed_passwords = []
+        for i in range(10):
+            for password in irsec_passwords:
+                if password != perturb(password, eps):
+                    num_different += 1
+            for password in passwords:
+                if password != perturb(password, eps):
+                    num_different += 1
+        print(f"Epsilon: {eps}, Different Passwords: {num_different} / {(len(passwords) + len(irsec_passwords)) * 10}")
+        # perturbed_passwords.append((password, perturb(password, eps)))
+        # perturbed[eps] = perturbed_passwords
     
-    pprint.pprint(perturbed, indent=4)
+    # pprint.pprint(perturbed, indent=4)
 
 if (__name__ == '__main__'):
     main()
