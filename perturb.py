@@ -1,5 +1,6 @@
 # perturb.py
 import math
+import pprint
 import string
 import random
 import itertools
@@ -388,7 +389,7 @@ def perturb_word(word: str, eps: float, nearest_neighbors: int = 10) -> str:
         # Only keep neighbors with length > 2 to avoid tiny/low-signal words.
         if cur["_is_word"]:
             candidate = "".join(path)
-            if len(candidate) > 2 and candidate not in seen_words:
+            if candidate not in seen_words:
                 seen_words.add(candidate)
                 neighbors.append(candidate)
                 traversal_distances.append(-dist)
@@ -460,9 +461,9 @@ def perturb_special(special: str, eps: float) -> str:
     return ret
 
 def perturb(password: str, eps: float = 1.0) -> str:
-    print(f"Original Password: {password}")
+    # print(f"Original Password: {password}")
     tokens, token_types = tokenize(password)
-    print(f"Tokenization: {tokens}")
+    # print(f"Tokenization: {tokens}")
 
     semantic_budget = eps / 2
     diction_budget = eps / 2
@@ -484,21 +485,25 @@ def perturb(password: str, eps: float = 1.0) -> str:
     return ''.join(tokens)
 
 def main():
-    eps = 5.0
-    perturbed_pass = perturb("Apple432Bottom#", eps)
-    print(f"Perturbed Password with eps={eps}: {perturbed_pass}")
-    perturbed_pass = perturb("Password123!", eps)
-    print(f"Perturbed Password with eps={eps}: {perturbed_pass}")
-    perturbed_pass = perturb("LemonJumpSlide1#", eps)
-    print(f"Perturbed Password with eps={eps}: {perturbed_pass}")
-    perturbed_pass = perturb("MaxPassword", eps)
-    print(f"Perturbed Password with eps={eps}: {perturbed_pass}")
-    perturbed_pass = perturb("iamaword2", eps)
-    print(f"Perturbed Password with eps={eps}: {perturbed_pass}")
-    perturbed_pass = perturb("Welcome1", eps)
-    print(f"Perturbed Password with eps={eps}: {perturbed_pass}")
-    perturbed_pass = perturb("RedTeamSucks3", eps)
-    print(f"Perturbed Password with eps={eps}: {perturbed_pass}")
+    eps_vals = [0.1, 0.25, 0.5, 1.0, 2.0, 5.0, 12.0, 20.0, 50.0, 100.0, 250.0, 1000.0, 5000.0]
+    passwords = [
+        "Apple432Bottom#",
+        "Password123!",
+        "LemonJumpSlide1#",
+        "MaxPassword",
+        "iamaword2",
+        "Welcome1",
+        "RedTeamSucks3"
+    ]
+    
+    perturbed = {}
+    for eps in eps_vals:
+        perturbed_passwords = []
+        for password in passwords:
+            perturbed_passwords.append((password, perturb(password, eps)))
+        perturbed[eps] = perturbed_passwords
+    
+    pprint.pprint(perturbed, indent=4)
 
 if (__name__ == '__main__'):
     main()
