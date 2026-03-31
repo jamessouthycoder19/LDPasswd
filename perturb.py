@@ -460,7 +460,9 @@ def perturb_special(special: str, eps: float) -> str:
     return ret
 
 def perturb(password: str, eps: float = 1.0) -> str:
+    print(f"Original Password: {password}")
     tokens, token_types = tokenize(password)
+    print(f"Tokenization: {tokens}")
 
     semantic_budget = eps / 2
     diction_budget = eps / 2
@@ -482,20 +484,21 @@ def perturb(password: str, eps: float = 1.0) -> str:
     return ''.join(tokens)
 
 def main():
-    perturbed_pass = perturb("Apple432Bottom#", 2.0)
-    print(perturbed_pass)
-    perturbed_pass = perturb("Password123!", 2.0)
-    print(perturbed_pass)
-    perturbed_pass = perturb("LemonJumpSlide1#", 2.0)
-    print(perturbed_pass)
-    perturbed_pass = perturb("MaxPassword", 2.0)
-    print(perturbed_pass)
-    perturbed_pass = perturb("iamaword2", 2.0)
-    print(perturbed_pass)
-    perturbed_pass = perturb("Welcome1", 2.0)
-    print(perturbed_pass)
-    perturbed_pass = perturb("Red1Team2Suckz3", 2.0)
-    print(perturbed_pass)
+    eps = 5.0
+    perturbed_pass = perturb("Apple432Bottom#", eps)
+    print(f"Perturbed Password with eps={eps}: {perturbed_pass}")
+    perturbed_pass = perturb("Password123!", eps)
+    print(f"Perturbed Password with eps={eps}: {perturbed_pass}")
+    perturbed_pass = perturb("LemonJumpSlide1#", eps)
+    print(f"Perturbed Password with eps={eps}: {perturbed_pass}")
+    perturbed_pass = perturb("MaxPassword", eps)
+    print(f"Perturbed Password with eps={eps}: {perturbed_pass}")
+    perturbed_pass = perturb("iamaword2", eps)
+    print(f"Perturbed Password with eps={eps}: {perturbed_pass}")
+    perturbed_pass = perturb("Welcome1", eps)
+    print(f"Perturbed Password with eps={eps}: {perturbed_pass}")
+    perturbed_pass = perturb("RedTeamSucks3", eps)
+    print(f"Perturbed Password with eps={eps}: {perturbed_pass}")
 
 if (__name__ == '__main__'):
     main()
