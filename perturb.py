@@ -485,7 +485,7 @@ def perturb(password: str, eps: float = 1.0) -> str:
     return ''.join(tokens)
 
 def main():
-    eps_vals = [0.1, 0.25, 0.5, 1.0, 2.0, 5.0, 12.0, 20.0, 50.0, 100.0, 250.0, 1000.0, 5000.0]
+    eps_vals = [0.01, 0.1, 0.25, 0.5, 1.0, 2.0, 5.0, 12.0, 20.0, 50.0, 100.0, 250.0, 1000.0, 5000.0]
     passwords = [
         "Apple432Bottom#",
         "Password123!",
@@ -493,13 +493,31 @@ def main():
         "MaxPassword",
         "iamaword2",
         "Welcome1",
-        "RedTeamSucks3"
+        "RedTeamSucks3",
+    ]
+
+    irsec_passwords = [
+        "Change.me123!",
+        "things",
+        "starburst",
+        "PleaseDont5489CH32",
+        "Super123!?",
+        "VikingWorksAgain!",
+        "Shadow#Leaf16@Node89",
+        "RedTeamIsUgly!!",
+        "White#Comet192@Map28",
+        "WhyAreWeStillHere2015?",
+        "foobarbaz5",
+        "weloveyouredteam",
+        "RickerBalls2",
+        "Idkwhatimdoinghelp1",
+        "ThankYouWhiteTeam"
     ]
     
     perturbed = {}
     for eps in eps_vals:
         perturbed_passwords = []
-        for password in passwords:
+        for password in irsec_passwords:
             perturbed_passwords.append((password, perturb(password, eps)))
         perturbed[eps] = perturbed_passwords
     
