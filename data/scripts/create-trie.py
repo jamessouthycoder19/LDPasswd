@@ -9,7 +9,7 @@ import math
 IMPORTANT_WORDS = ["password", "red", "blue", "irsec", "lockdown"]
 
 DATA_LOCATION = "../data.bin"
-DATA_HEADER_LOCATION = "../../include/ldpasswd/data.h"
+DATA_HEADER_LOCATION = "../../src/data.c"
 
 ORIGNIAL_DATA_LOCATION = "../original-wordlists/"
 

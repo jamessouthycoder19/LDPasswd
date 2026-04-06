@@ -6,6 +6,7 @@
 #include "ldpasswd/perturb.h"
 #include "ldpasswd/ldpasswd.h"
 #include "ldpasswd/tokenize.h"
+#include "ldpasswd/leet.h"
 
 void perturb(char *pw, double eps){
     // Array to hold starting indices of each token
@@ -28,8 +29,12 @@ void perturb(char *pw, double eps){
         unleeted_pw[j] = '\0';
     }
 
+    // Pointer to hold new password with perturbed tokens
+    char *perturbed_pw = malloc(pw_length * 2);
+    for (int j = 0; j < pw_length * 2; j++) {
+        perturbed_pw[j] = '\0';
+    }
 
-    printf("Tokenizing: %s\n", pw);
     int num_tokens = tokenize_password(pw, start_of_token_indicies, token_types, unleeted_pw);
 
     // Establish privacy budget for semantic and diction perturbations
@@ -37,7 +42,6 @@ void perturb(char *pw, double eps){
     double diction_budget = (num_tokens * eps) / (num_tokens + 1);
     double budget_per_token = diction_budget / num_tokens;
 
-    printf("Unleeted: %s\n", unleeted_pw);
     for (int j = 0; j < 20; j++) {
         if (start_of_token_indicies[j] != -1) {
             int next_token_start = (j < 19) ? start_of_token_indicies[j + 1] : strlen(pw);
@@ -48,22 +52,28 @@ void perturb(char *pw, double eps){
                 token_len = strlen(pw) - start_of_token_indicies[j];
             }
             if (token_types[j] == 'w') {
-                printf("Word");
-                printf(":%.*s\n", token_len, pw + start_of_token_indicies[j]);
+                char* perturbed_word = perturb_word(unleeted_pw + start_of_token_indicies[j], token_len, budget_per_token);
+                fix_perturbed_password_leet(perturbed_word, pw + start_of_token_indicies[j], pw_length);
+                strcat(perturbed_pw, perturbed_word);
+                free(perturbed_word);
             } else if (token_types[j] == 'n') {
-                perturb_number(unleeted_pw + start_of_token_indicies[j], token_len, budget_per_token);
-                printf("Number");
-                printf(":%.*s\n", token_len, unleeted_pw + start_of_token_indicies[j]);
+                int perturbed_number = perturb_number(unleeted_pw + start_of_token_indicies[j], token_len, budget_per_token);
+                char num_buf[32];
+                sprintf(num_buf, "%0*d", token_len, perturbed_number);
+                strcat(perturbed_pw, num_buf);
             } else if (token_types[j] == 's') {
-                printf("Special");
-                printf(":%.*s\n", token_len, unleeted_pw + start_of_token_indicies[j]);
+                char perturbed_special = perturb_special(unleeted_pw + start_of_token_indicies[j], budget_per_token);
+                strcat(perturbed_pw, &perturbed_special);
             } else {
-                printf("Other");
-                printf(":%.*s\n", token_len, unleeted_pw + start_of_token_indicies[j]);
+                strncat(perturbed_pw, unleeted_pw + start_of_token_indicies[j], token_len);
             }
             
         }
     }
+
+    printf("Before: %s\n", pw);
+    printf("After : %s\n", perturbed_pw);
+
     printf("\n");
     free(unleeted_pw);
     free(token_types);
@@ -73,38 +83,39 @@ void perturb(char *pw, double eps){
 void hello() {
     srand(time(NULL));
     char test_pws[][64] = {
-        "2Pas23Thing456"
-        // "Password7JamesTh1ngFather",
-        // "PassWord123",
-        // "Unknownword",
-        // "jamesblahblahblah",
-        // "P@sSw0Rd",
-        // "passw0rdRed14&TeamSucks",
-        // "123PassWord123",
-        // "1Unknown(((wordBlah",
-        // "P@sSw0RdJ4mes",
-        // "Change.me123!",
-        // "starburst",
-        // "PleaseDont5489CH32",
-        // "Super123!?",
-        // "VikingWorksAgain!",
-        // "RedTeamIsUgly!!",
-        // "White#Comet192@Map28",
-        // "WhyAreWeStillHere2015?",
-        // "foobarbaz5",
-        // "weloveyouredteam",
-        // "RickerBalls2",
-        // "Idkwhatimdoinghelp1",
-        // "ThankYouWhiteTeam",
-        // "Apple432Bottom#",
-        // "Welcome1",
-        // "RedTeamSucks3",
-        // "LemonJumpSlide1#",
-        // "AngleBatman1!"
+        "musketeer333marshmallow",
+        "!blah#Thing^",
+        "Password7JamesTh1ngFather",
+        "PassWord123",
+        "Unknownword",
+        "jamesblahblahblah",
+        "P@sSw0Rd",
+        "passw0rdRed14&TeamSucks",
+        "123PassWord123",
+        "1Unknown(((wordBlah",
+        "P@sSw0RdJ4mes",
+        "Change.me123!",
+        "starburst",
+        "PleaseDont5489CH32",
+        "Super123!?",
+        "VikingWorksAgain!",
+        "RedTeamIsUgly!!",
+        "White#Comet192@Map28",
+        "WhyAreWeStillHere2015?",
+        "foobarbaz5",
+        "weloveyouredteam",
+        "RickerBalls2",
+        "Idkwhatimdoinghelp1",
+        "ThankYouWhiteTeam",
+        "Apple432Bottom#",
+        "Welcome1",
+        "RedTeamSucks3",
+        "LemonJumpSlide1#",
+        "AngleBatman1!"
     };
 
-    for (int i = 0; i < 1; i++) {
-    // for (int i = 0; i < 27; i++) {
-        perturb(test_pws[i], 25);
+    // for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 29; i++) {
+        perturb(test_pws[i], 5);
     }
 }

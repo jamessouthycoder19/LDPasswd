@@ -85,3 +85,22 @@ ResultList generate_unleet(const char *input) {
     
     return res;
 }
+
+void fix_perturbed_password_leet(char *perturbed_pw, char *original_pw, int max_len) {
+    for (int i = 0; i < max_len; i++) {
+        char c = perturbed_pw[i];
+
+        // first check leeted characters
+        for (int j = 0; j < sizeof(LEET_MAP) / sizeof(Map); j++) {
+            if (LEET_MAP[j].original == c && LEET_MAP[j].leet == original_pw[i]) {
+                perturbed_pw[i] = LEET_MAP[j].original;
+                break;
+            }
+        }
+
+        // Now uppercase/lowercase
+        if (toupper(c) == original_pw[i]) {
+            perturbed_pw[i] = toupper(c);
+        }      
+    }
+}

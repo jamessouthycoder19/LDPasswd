@@ -11,6 +11,8 @@ add_library(ldpasswd STATIC
     src/tokenize.c
     src/leet.c
     src/perturb.c
+    src/data.c
+    src/data_helpers.c
 )
 
 # Configure Library Headers

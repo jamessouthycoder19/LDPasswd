@@ -2,6 +2,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stdint.h>
+
+#include "ldpasswd/data.h"
+#include "ldpasswd/data_helpers.h"
 
 int exponential_mechanism(double *utility_space, int utility_space_length, double budget) {
     double *weights = malloc((utility_space_length) * sizeof(double));
@@ -33,18 +37,169 @@ int exponential_mechanism(double *utility_space, int utility_space_length, doubl
     return utility_space_length - 1;
 }
 
-void perturb_word(char *token, double budget) {
-    // Placeholder for perturbing a word token using the given budget
-    // This could involve synonym replacement, character swapping, etc.
+char* perturb_word(char *token, int token_len, double budget) {
+    // First, Breadth first search to find the nearest 5 words to token in the trie, 
+    
+    // current_idx is the index in the trie array where we start (i.e. the root)
+    int current_idx = 0;
+    // current_cnt is the number of nodes at the current level (initially the root level, so 26 for the characters in the alphabet)
+    int current_cnt = 26;
+    
+    // table is the entire trie loaded into memory as an array of Nodes
+    Node *table = (Node *)___data_bin;
+
+    int current_depth = 0;
+
+    char *perturb_candidates[10];
+    float candidate_costs[10];
+    int candidate_distances[10];
+    int candidate_count = 0;
+    Node *nodes_visited[128];
+    int minimum_candidate_cost = 10000;
+
+    // First, BFS to the end of the token in the trie, keeping track of the nodes we visit along the way
+    while (current_depth < token_len) {
+        Node key = {0};
+        key.token = token[current_depth];
+
+        // Binary search for the current character among the current node's children
+        Node *match = (Node *)bsearch(&key, &table[current_idx], current_cnt, sizeof(Node), compare_nodes);
+
+        if (match) {
+            nodes_visited[current_depth] = match;
+
+            // Prepare for next iteration
+            current_depth++;
+
+            // If no children exist, stop searching
+            if (match->child_idx == -1 || match->child_cnt == 0) {
+                break;
+            }
+
+            // Move search range to this node's children
+            current_idx = match->child_idx;
+            current_cnt = match->child_cnt;
+        } else {
+            // No matching character found; trie path ends here
+            break;
+        }
+    }
+
+
+    // First add original word as a canididate
+    if (current_depth == token_len && nodes_visited[current_depth - 1]->is_word) {
+        perturb_candidates[candidate_count] = malloc(token_len + 1);
+        memcpy(perturb_candidates[candidate_count], token, token_len);
+        perturb_candidates[candidate_count][token_len] = '\0';
+        
+        candidate_costs[candidate_count] = nodes_visited[current_depth - 1]->cost;
+        if (candidate_costs[candidate_count] < minimum_candidate_cost) minimum_candidate_cost = candidate_costs[candidate_count];
+        candidate_distances[candidate_count] = 0;
+        candidate_count++;
+    }
+
+    // Find all other perturbation candidates
+    for (int depth = current_depth - 1; depth >= 0 && candidate_count < 10; depth--) {
+        int level_start_idx = (depth == 0) ? 0 : nodes_visited[depth-1]->child_idx;
+        int level_count = (depth == 0) ? 26 : nodes_visited[depth-1]->child_cnt;
+
+        for (int i = 0; i < level_count && candidate_count < 10; i++) {
+            Node *sibling = &table[level_start_idx + i];
+            
+            if (sibling == nodes_visited[depth]) continue;
+
+            // Check if sibling is a word
+            if (sibling->is_word) {
+                // Construct temporary string to check for duplicates
+                char temp[depth + 2];
+                for (int k = 0; k < depth; k++) temp[k] = nodes_visited[k]->token;
+                temp[depth] = sibling->token;
+                temp[depth + 1] = '\0';
+
+                int exists = 0;
+                for (int e = 0; e < candidate_count; e++) {
+                    if (strcmp(perturb_candidates[e], temp) == 0) {
+                        exists = 1; break;
+                    }
+                }
+
+                if (!exists) {
+                    perturb_candidates[candidate_count] = malloc(depth + 2);
+                    strcpy(perturb_candidates[candidate_count], temp);
+                    candidate_costs[candidate_count] = sibling->cost;
+                    if (candidate_costs[candidate_count] < minimum_candidate_cost) minimum_candidate_cost = candidate_costs[candidate_count];
+                    candidate_distances[candidate_count] = (token_len - depth) + 1;
+                    candidate_count++;
+                }
+            }
+
+            // Check sibling's children
+            if (candidate_count < 10 && sibling->child_idx != -1) {
+                for (int j = 0; j < sibling->child_cnt && candidate_count < 10; j++) {
+                    Node *child = &table[sibling->child_idx + j];
+                    if (child->is_word) {
+                        char temp[depth + 3];
+                        for (int k = 0; k < depth; k++) temp[k] = nodes_visited[k]->token;
+                        temp[depth] = sibling->token;
+                        temp[depth + 1] = child->token;
+                        temp[depth + 2] = '\0';
+
+                        int exists = 0;
+                        for (int e = 0; e < candidate_count; e++) {
+                            if (strcmp(perturb_candidates[e], temp) == 0) {
+                                exists = 1; break;
+                            }
+                        }
+
+                        if (!exists) {
+                            perturb_candidates[candidate_count] = malloc(depth + 3);
+                            strcpy(perturb_candidates[candidate_count], temp);
+                            candidate_costs[candidate_count] = child->cost;
+                            if (candidate_costs[candidate_count] < minimum_candidate_cost) minimum_candidate_cost = candidate_costs[candidate_count];
+                            candidate_distances[candidate_count] = (token_len - depth) + 1;
+                            candidate_count++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Set the original word's cost as the minimum cost among candidates to ensure it has the highest utility
+    candidate_costs[0] = minimum_candidate_cost;
+
+    // Create the utility space for the exponential mechanism (negative cost minus distance)
+    double candidate_utilities[10];
+    for (int i = 0; i < candidate_count; i++) {
+        candidate_utilities[i] = minimum_candidate_cost - candidate_costs[i] - candidate_distances[i];
+    }
+
+    // Select a candidate using the exponential mechanism
+    int selected_idx = exponential_mechanism(candidate_utilities, candidate_count, budget);
+
+    char* result = strdup(perturb_candidates[selected_idx]);
+
+    for (int i = 0; i < candidate_count; i++) {
+        free(perturb_candidates[i]);
+    }
+    
+    return result;
 }
 
-void perturb_number(char *token, int token_len, double budget) {
+/**
+ * Perturbs a number token by applying the exponential mechanism
+ * to select a new number based on a utility function that is the
+ * distance from the original number.
+ */
+int perturb_number(char *token, int token_len, double budget) {
     int len_num = token_len;
-
+ 
+    // Find the max number that we can represent with the given number of digits
     int max_num = 1;
     for(int i = 0; i < len_num; i++) max_num *= 10;
     max_num -= 1;
 
+    // Convert the token to an integer
     int token_num = atoi(token);
 
     // Create utility space
@@ -54,20 +209,40 @@ void perturb_number(char *token, int token_len, double budget) {
     }
 
     int selection = exponential_mechanism(utility_space, max_num + 1, budget);
-
-    // Create a temporary buffer to format the number
-    // Ensure it's large enough for any integer
-    char fmt_buf[32];
-    // Use %0*d to preserve leading zeros if the original had them (e.g., "07")
-    sprintf(fmt_buf, "%0*d", len_num, selection);
-
-    // Only copy up to the original length to avoid overflowing the password buffer
-    memcpy(token, fmt_buf, len_num);
     
     free(utility_space);
+
+    return selection;
 }
 
-void perturb_special(char *token, double budget) {
-    // Placeholder for perturbing a special character token using the given budget
-    // This could involve character replacement, shuffling, etc.
+/**
+ * Perturbs a special character token by applying the exponential mechanism to 
+ * select a new special character based on a utility function that is the distance 
+ * from the original character to the new one based on the qwerty keyboard layout.
+ */
+char perturb_special(char *token, double budget) {
+    char *special_chars = "`~!@#$%%^&*()-_=+[{]}\\|;:'\",<.>/?";
+
+    int token_num = -1;
+    for (int i = 0; i < strlen(special_chars); i++) {
+        if (token[0] == special_chars[i]) {
+            token_num = i;
+            break;
+        }
+    }
+
+    double *utility_space = malloc((strlen(special_chars) + 1) * sizeof(double));
+    for (int i = 0; i <= strlen(special_chars); i++) {
+        utility_space[i] = -1.0 * abs(token_num - i);
+    }
+
+    int selection = exponential_mechanism(utility_space, strlen(special_chars) + 1, budget);
+    
+    free(utility_space);
+
+    if (selection < strlen(special_chars)) {
+        return special_chars[selection];
+    } else {
+        return special_chars[token_num];
+    }
 }
