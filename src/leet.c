@@ -92,8 +92,9 @@ void fix_perturbed_password_leet(char *perturbed_pw, char *original_pw, int max_
 
         // first check leeted characters
         for (int j = 0; j < sizeof(LEET_MAP) / sizeof(Map); j++) {
+            // printf("%c == %c and %c == %c\n", c, LEET_MAP[j].original, original_pw[i], LEET_MAP[j].leet);
             if (LEET_MAP[j].original == c && LEET_MAP[j].leet == original_pw[i]) {
-                perturbed_pw[i] = LEET_MAP[j].original;
+                perturbed_pw[i] = LEET_MAP[j].leet;
                 break;
             }
         }

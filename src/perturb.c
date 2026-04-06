@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdint.h>
+#include <time.h>
 
 #include "ldpasswd/data.h"
 #include "ldpasswd/data_helpers.h"
@@ -245,4 +246,87 @@ char perturb_special(char *token, double budget) {
     } else {
         return special_chars[token_num];
     }
+}
+
+// Helper to calculate inversions (Swap Distance)
+int get_utility(int *indices, int n) {
+    int inversions = 0;
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (indices[i] > indices[j]) inversions++;
+        }
+    }
+    return -1 * inversions;
+}
+
+void swap(int *a, int *b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+void mcmc_perturb(int *current_indices, int n, float eps) {
+    // Number of MCMC steps to perform
+    int iterations = 1000;
+
+    int current_u = get_utility(current_indices, n);
+
+    // MCMC Walk
+    for (int i = 0; i < iterations; i++) {
+        // Propose a neighbor by swapping two random elements
+        int idx1 = rand() % n;
+        int idx2 = rand() % n;
+        if (idx1 == idx2) continue;
+
+        swap(&current_indices[idx1], &current_indices[idx2]);
+        int proposal_u = get_utility(current_indices, n);
+
+        // Calculate Acceptance Probability
+        // P(accept) = min(1, exp(eps * (prop_u - curr_u) / 2))
+        double diff = (double)(proposal_u - current_u);
+        double acceptance_prob = exp((eps * diff) / 2.0);
+
+        double r = (double)rand() / (double)RAND_MAX;
+
+        if (r < acceptance_prob) {
+            // Accept the move
+            current_u = proposal_u;
+        } else {
+            // Reject: Swap back
+            swap(&current_indices[idx1], &current_indices[idx2]);
+        }
+    }
+}
+
+void perturb_semantically(char *pw, int *start_of_token_indicies, double budget) {
+    int num_tokens = 0;
+    for (int i = 0; i < 20; i++) {
+        if (start_of_token_indicies[i] != -1) {
+            num_tokens++;
+        } else {
+            break;
+        }
+    }
+
+    int original_list[num_tokens];
+    for (int i = 0; i < num_tokens; i++) original_list[i] = i;
+    
+
+    int total_swaps = 0;
+
+    mcmc_perturb(original_list, num_tokens, budget);
+
+    // create temp password storing original password
+    char *temp = strdup(pw);
+
+    // Zero out buffer fpr original password
+    for (int i = 0; i < strlen(pw); i++) pw[i] = '\0';
+
+    for (int i = 0; i < num_tokens; i++) {
+        int token_idx = original_list[i];
+        int next_token_start = (token_idx < num_tokens - 1) ? start_of_token_indicies[token_idx + 1] : strlen(temp);
+        int token_len = next_token_start - start_of_token_indicies[token_idx];
+        strncat(pw, temp + start_of_token_indicies[token_idx], token_len);
+    }
+    free(temp);
 }

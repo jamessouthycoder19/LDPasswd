@@ -14,6 +14,13 @@ void perturb(char *pw, double eps){
     for (int i = 0; i < 20; i++) {
         start_of_token_indicies[i] = -1;
     }
+
+    // Array to hold starting indices of each token after perturbing
+    int *start_of_token_indicies_after_perturbing = malloc(20 * sizeof(int));
+    for (int i = 0; i < 20; i++) {
+        start_of_token_indicies_after_perturbing[i] = -1;
+    }
+
     int token_count = 0;
 
     // Array to hold type of each token (word, number, special, or other)
@@ -44,6 +51,8 @@ void perturb(char *pw, double eps){
 
     for (int j = 0; j < 20; j++) {
         if (start_of_token_indicies[j] != -1) {
+            start_of_token_indicies_after_perturbing[j] = strlen(perturbed_pw);
+
             int next_token_start = (j < 19) ? start_of_token_indicies[j + 1] : strlen(pw);
             int token_len;
             if (next_token_start != -1) {
@@ -63,21 +72,24 @@ void perturb(char *pw, double eps){
                 strcat(perturbed_pw, num_buf);
             } else if (token_types[j] == 's') {
                 char perturbed_special = perturb_special(unleeted_pw + start_of_token_indicies[j], budget_per_token);
-                strcat(perturbed_pw, &perturbed_special);
+                perturbed_pw[strlen(perturbed_pw)] = perturbed_special;
             } else {
                 strncat(perturbed_pw, unleeted_pw + start_of_token_indicies[j], token_len);
             }
-            
         }
     }
 
-    printf("Before: %s\n", pw);
-    printf("After : %s\n", perturbed_pw);
+    perturb_semantically(perturbed_pw, start_of_token_indicies_after_perturbing, semantic_budget);
 
-    printf("\n");
+    // Zero out original password buffer and copy perturbed password back in
+    for (int i = 0; i < strlen(pw); i++) pw[i] = '\0';
+    strncpy(pw, perturbed_pw, strlen(perturbed_pw));
+
+    free(perturbed_pw);
     free(unleeted_pw);
     free(token_types);
     free(start_of_token_indicies);
+    free(start_of_token_indicies_after_perturbing);
 }
 
 void hello() {
@@ -114,8 +126,15 @@ void hello() {
         "AngleBatman1!"
     };
 
-    // for (int i = 0; i < 5; i++) {
+    double epsilon_values[] = {20, 15, 10, 5, 2.5, 1};
+
     for (int i = 0; i < 29; i++) {
-        perturb(test_pws[i], 5);
+        printf("\nBefore      : %s\n", test_pws[i]);
+        for (int j = 0; j < 6; j++) {
+            char temp[64];
+            strncpy(temp, test_pws[i], 64);
+            perturb(temp, epsilon_values[j]);
+            printf("After e=%.1f: %s\n", epsilon_values[j], temp);
+        }
     }
 }
