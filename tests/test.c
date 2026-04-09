@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include <ldpasswd/ldpasswd.h>
 
@@ -33,14 +34,45 @@ int main(void) {
         "Welcome1",
         "RedTeamSucks3",
         "LemonJumpSlide1#",
-        "AngleBatman1!"
+        "AngleBatman1!",
+        "IHateRedTeam1234",
+        "ILoveWhiteTeam1234",
+        "ThisIsAStrongPassword1234!",
+        "P@ssw0rdIsStrong1234!",
+        "changeme",
+        "sysadmin",
+        "letredin",
+        "southycoder",
+        "MYz=XfwE!ejCw?{D",
+        "12345678910",
+        "12345678",
+        "weloveccdclinux",
+        "helloredteam",
+        "rootIsVeryImportant",
+        "somedifferentpassword123",
+        "M0diF13d19^",
+        "6wVQQezTk3T7iT9l8dOJ",
+        "375iY5zHMH14vrlQyMwX",
+        "MyNameIsMax",
+        "ILoveRedTeam",
+        "ILoveRedTeam123",
+        "FUCKRedTeam",
+        "PLEASEINEEDTHEROUTER",
+        "SvyatoslavSucks",
+        "RedTeamIsTheWorstTeamEver12345",
+        "SUPERsecurePASSWORD",
     };
 
-    double epsilon_values[] = {40, 30, 20, 15, 10, 5, 2.5, 1};
-    for (int j = 0; j < 8; j++) {
+    // Important, If you are trying to test in scale, uncomment this line and then comment out the same line in perturb.c
+    // because when using in an actual envirnment, we want to randomize everytime, but for brute force testing, we only
+    // want to randomize once.
+    // srand(time(NULL));
+
+    double epsilon_values[] = {40, 35, 30, 25, 20, 17.5, 15, 12.5, 10, 7.5, 5, 2.5, 1};
+    for (int j = 0; j < 13; j++) {
         printf("Epsilon: %f\n", epsilon_values[j]);
         int num_same = 0;
-        for (int i = 0; i < 29; i++) {
+        for (int i = 0; i < 54; i++) { //54
             for (int k = 0; k < 1000; k++) {
                 char temp[64];
                 strncpy(temp, test_pws[i], 64);
@@ -50,6 +82,6 @@ int main(void) {
                 }   
             }
         }
-        printf("Percent Changed: %f\n\n", 100.0 * (29000 - num_same) / 29000);
+        printf("Percent Changed: %f\n\n", 100.0 * (54000 - num_same) / 54000);
     }
 }

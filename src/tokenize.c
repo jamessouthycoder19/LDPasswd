@@ -182,10 +182,13 @@ int tokenize_password(char *pw, int *start_of_token_indices, char *token_types, 
         } 
         else if (isdigit(pw[i])) {
             // If we find a number, it'll keep looking for the next number, to keep them all together as 1 token
+            // j variable makes sure we don't go past the maximum number in c
+            int j = 0;
             token_types[token_count] = 'n';
-            while (i < pw_length && isdigit(pw[i])) {
+            while (i < pw_length && isdigit(pw[i]) && j < 6) {
                 unleeted_pw[i] = pw[i];
                 i++;
+                j++;
             }
         }
         else if (ispunct(pw[i])) {

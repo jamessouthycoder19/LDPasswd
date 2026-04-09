@@ -193,27 +193,45 @@ char* perturb_word(char *token, int token_len, double budget) {
  * distance from the original number.
  */
 int perturb_number(char *token, int token_len, double budget) {
-    int len_num = token_len;
- 
-    // Find the max number that we can represent with the given number of digits
-    int max_num = 1;
-    for(int i = 0; i < len_num; i++) max_num *= 10;
-    max_num -= 1;
+    // printf("Token Len: %d\n", token_len);
+    int min_num;
+    int max_num;
 
-    // Convert the token to an integer
-    int token_num = atoi(token);
+    char* temp_token = strndup(token, token_len);
+    int token_num = atoi(temp_token);
+    free(temp_token);
 
-    // Create utility space
-    double *utility_space = malloc((max_num + 1) * sizeof(double));
-    for (int i = 0; i <= max_num; i++) {
-        utility_space[i] = -1.0 * abs(token_num - i);
+
+    if (token_len > 2) {
+        // If we have a number that is more than 2 numbers, only +- 100 from the original number, same number of digits as original number
+        // find baselines
+        int abs_max_num = 1;
+        for(int i = 0; i < token_len; i++) abs_max_num *= 10;
+        abs_max_num -= 1;
+        int abs_min_num = abs_max_num / 10;
+
+        max_num = token_num + 100;
+        min_num = token_num - 100;
+        if (min_num < abs_min_num) min_num = abs_min_num;
+        if (max_num > abs_max_num) max_num = abs_max_num;
+    } else {
+        // If we have a number that is 2 numbers or less, we can do every possible number in that number space
+        max_num = 1;
+        for(int i = 0; i < token_len; i++) max_num *= 10;
+        max_num -= 1;
+        min_num = (max_num / 10) + 1;
     }
 
-    int selection = exponential_mechanism(utility_space, max_num + 1, budget);
+    // Create utility space
+    double *utility_space = malloc((max_num - min_num + 1) * sizeof(double));
+    for (int i = min_num; i <= max_num; i++) {
+        utility_space[i - min_num] = -1.0 * abs(token_num - i);
+    }
+
+    int selection = exponential_mechanism(utility_space, max_num - min_num + 1, budget);
     
     free(utility_space);
-
-    return selection;
+    return selection + min_num;
 }
 
 /**
