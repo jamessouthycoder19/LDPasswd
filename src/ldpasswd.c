@@ -51,10 +51,19 @@ void perturb_password(char *pw, double eps){
     int num_tokens = tokenize_password(pw, start_of_token_indicies, token_types, unleeted_pw);
 
     // Establish privacy budget for semantic and diction perturbations
-    double semantic_budget = eps / (num_tokens + 1);
-    double diction_budget = (num_tokens * eps) / (num_tokens + 1);
-    double budget_per_token = diction_budget / num_tokens;
-
+    double semantic_budget;
+    double diction_budget;
+    double budget_per_token;
+    if (num_tokens == 1) {
+        semantic_budget = 0;
+        diction_budget = 0;
+        budget_per_token = eps;
+    } else {
+        semantic_budget = eps / (num_tokens + 1);
+        diction_budget = (num_tokens * eps) / (num_tokens + 1);
+        budget_per_token = diction_budget / num_tokens;
+    }
+    
     for (int j = 0; j < 20; j++) {
         if (start_of_token_indicies[j] != -1) {
             start_of_token_indicies_after_perturbing[j] = strlen(perturbed_pw);
