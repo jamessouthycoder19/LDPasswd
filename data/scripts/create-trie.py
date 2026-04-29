@@ -53,6 +53,18 @@ def generate_binary_table(wordlist_paths):
                         curr[char]["freq"] += frequency
                     curr = curr[char]["children"]
 
+    for word in IMPORTANT_WORDS:
+        if word not in root:
+            curr = root
+            for i, char in enumerate(word):
+                if char not in curr:
+                    curr[char] = {"_is_word": False, "freq": 0, "children": {}}
+                if i == len(word) - 1:
+                    curr[char]["_is_word"] = True
+                    curr[char]["freq"] += 1000000
+                    total_frequency += 1000000
+                curr = curr[char]["children"]
+
     # Calculate log total frequency for cost calculations
     log_total = math.log2(total_frequency) if total_frequency > 0 else 0
     flat_table = []
